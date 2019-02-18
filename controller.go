@@ -6,11 +6,9 @@ import (
 )
 
 type MainControler struct {
-	conMap map[string]interface{}
+	ConMap map[string]interface{}
 }
 
-func (main *MainControler) Router(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("123")
-	fmt.Println(r)
-	fmt.Println(w)
+func (mainc *MainControler) Router(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(mainc.ConMap)
 }
