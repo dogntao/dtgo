@@ -1,3 +1,34 @@
 package dtgo
 
-var MainC *MainControler
+import "net/http"
+
+type Host struct {
+	Public string // 静态路径名称(/public)
+	Js     string // 静态js路径(/js/)
+	CSS    string // 静态css路径(/css/)
+	Image  string // 静态图片路径(/image/)
+	Port   string // 端口
+	Router *RouterStruct
+}
+
+func NewHost(public, js, css, image, port string) *Host {
+	return &Host{
+		Public: public,
+		Js:     public,
+		CSS:    css,
+		Image:  image,
+		Port:   port,
+		Router: &RouterStruct{},
+	}
+}
+
+func (host *Host) Run() {
+	// js路径
+	http.Handle(host.Js, http.FileServer(http.Dir(host.Public)))
+	// css路径
+	http.Handle(host.CSS, http.FileServer(http.Dir(host.Public)))
+	// 静态图片路径
+	http.Handle(host.Image, http.FileServer(http.Dir(host.Public)))
+	http.HandleFunc("/", host.Router.Router)
+	http.ListenAndServe(host.Port, nil)
+}
