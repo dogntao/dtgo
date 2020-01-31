@@ -14,11 +14,14 @@ type Host struct {
 func NewHost(public, js, css, image, port string) *Host {
 	return &Host{
 		Public: public,
-		Js:     public,
+		Js:     js,
 		CSS:    css,
 		Image:  image,
 		Port:   port,
-		Router: &RouterStruct{},
+		Router: &RouterStruct{
+			Params: make(map[string]string),
+			ConMap: make(map[string]interface{}),
+		},
 	}
 }
 

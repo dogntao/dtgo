@@ -5,7 +5,10 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"text/template"
 )
+
+var Assign = make(map[string]interface{})
 
 type RouterStruct struct {
 	// 对应controller和action
@@ -46,6 +49,7 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 				routerStruct.Params[k] = v[0]
 			}
 		}
+		routerStruct.Req = r
 		routerStruct.Rep = w
 		// 通过反射调用方法
 		conv, exist := routerStruct.ConMap[routerStruct.Con]
@@ -60,11 +64,33 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		} else {
 			fmt.Println(routerStruct.Con + " controller is not exist")
 		}
-		fmt.Println(routerStruct)
 	}
 }
 
 // 注册路由
 func (routerStruct *RouterStruct) RegisterRouter(con string, inter interface{}) {
 	routerStruct.ConMap[con] = inter
+}
+
+// 根据路径获取文件名(不带后缀)
+func getFileName(filePath string) string {
+	pageArr := strings.Split(filePath, "/")
+	pageName := pageArr[len(pageArr)-1]
+	pageNameArr := strings.Split(pageName, ".")
+	return pageNameArr[0]
+}
+
+// 显示前台页面
+func (routerStruct *RouterStruct) Display(page string) {
+	tem, err := template.ParseFiles(page, "views/layouts/index/about_left.html", "views/layouts/index/have_left.html", "views/layouts/index/no_left.html", "views/layouts/index/header.html", "views/layouts/index/footer.html")
+	if err != nil {
+		fmt.Println(err)
+	}
+	pageName := getFileName(page)
+	Assign["Con"] = routerStruct.Con
+	Assign["Act"] = routerStruct.Act
+	err = tem.ExecuteTemplate(routerStruct.Rep, pageName, Assign)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
