@@ -8,8 +8,10 @@ import (
 	"text/template"
 )
 
+// Assign 传递给页面参数
 var Assign = make(map[string]interface{})
 
+// RouterStruct 路由参数
 type RouterStruct struct {
 	// 对应controller和action
 	Con, Act string
@@ -23,7 +25,7 @@ type RouterStruct struct {
 	ConMap map[string]interface{}
 }
 
-// 路由
+// Router 路由方法
 func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request) {
 	url := r.URL
 	path := url.Path
@@ -51,6 +53,12 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		}
 		routerStruct.Req = r
 		routerStruct.Rep = w
+
+		// method默认为index
+		if routerStruct.Act == "" {
+			routerStruct.Act = strings.Title("index")
+		}
+
 		// 通过反射调用方法
 		conv, exist := routerStruct.ConMap[routerStruct.Con]
 		if exist == true {
@@ -67,7 +75,7 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// 注册路由
+// RegisterRouter 注册controller文件到路由
 func (routerStruct *RouterStruct) RegisterRouter(con string, inter interface{}) {
 	routerStruct.ConMap[con] = inter
 }
@@ -80,15 +88,15 @@ func getFileName(filePath string) string {
 	return pageNameArr[0]
 }
 
-// 显示前台页面
+// Display 渲染页面方法
 func (routerStruct *RouterStruct) Display(page string) {
 	tem, err := template.ParseFiles(page, "views/layouts/index/about_left.html", "views/layouts/index/have_left.html", "views/layouts/index/no_left.html", "views/layouts/index/header.html", "views/layouts/index/footer.html")
 	if err != nil {
 		fmt.Println(err)
 	}
 	pageName := getFileName(page)
-	Assign["Con"] = routerStruct.Con
-	Assign["Act"] = routerStruct.Act
+	Assign["Con"] = strings.ToLower(routerStruct.Con)
+	Assign["Act"] = strings.ToLower(routerStruct.Act)
 	err = tem.ExecuteTemplate(routerStruct.Rep, pageName, Assign)
 	if err != nil {
 		fmt.Println(err)
