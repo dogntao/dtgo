@@ -54,6 +54,10 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		routerStruct.Req = r
 		routerStruct.Rep = w
 
+		// controller默认为index
+		if routerStruct.Con == "" {
+			routerStruct.Con = strings.Title("index")
+		}
 		// method默认为index
 		if routerStruct.Act == "" {
 			routerStruct.Act = strings.Title("index")
