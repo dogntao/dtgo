@@ -33,6 +33,10 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		// 处理controllre和action
 		pathArr := strings.Split(path, "/")
 		// 处理controller和action
+		// controller默认为index
+		routerStruct.Con = strings.Title("index")
+		// method默认为index
+		routerStruct.Act = strings.Title("index")
 		for k, v := range pathArr {
 			// 首字母大写
 			v = strings.Title(v)
@@ -44,6 +48,7 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 				routerStruct.Act = v
 			}
 		}
+
 		// 处理参数
 		routerStruct.Params = make(map[string]string)
 		for k, v := range url.Query() {
@@ -53,15 +58,6 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		}
 		routerStruct.Req = r
 		routerStruct.Rep = w
-
-		// controller默认为index
-		if routerStruct.Con == "" {
-			routerStruct.Con = strings.Title("index")
-		}
-		// method默认为index
-		if routerStruct.Act == "" {
-			routerStruct.Act = strings.Title("index")
-		}
 
 		// 通过反射调用方法
 		conv, exist := routerStruct.ConMap[routerStruct.Con]
