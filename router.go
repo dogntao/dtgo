@@ -40,10 +40,10 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		for k, v := range pathArr {
 			// 首字母大写
 			v = strings.Title(v)
-			if k == 1 {
+			if k == 1 && v != "" {
 				// controller
 				routerStruct.Con = v
-			} else if k == 2 {
+			} else if k == 2 && v != "" {
 				// action
 				routerStruct.Act = v
 			}
