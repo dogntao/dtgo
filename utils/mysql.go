@@ -27,21 +27,51 @@ type Mysql struct {
 	dbname  string
 	charset string
 
-	DbStore
+	pool    chan *sql.DB
 	rows    *sql.Rows
 	cols    []string
 	RetMap  map[string]string
 	RetRows []map[string]string
 }
 
-func Connect(c Conf) (db *sql.DB, err error) {
-	mysql := new(Mysql)
+func NewMysql(c Conf) (mysql *Mysql) {
+	mysql = &Mysql{}
 	mysql.host = c["host"]
 	mysql.user = c["user"]
 	mysql.pass = c["pass"]
 	mysql.dbname = c["dbname"]
 	mysql.charset = c["charset"]
+	return
+}
 
+// 创建连接池
+func (mysql *Mysql) New() {
+	mysql.pool = make(chan *sql.DB, 50)
+	for i := 0; i < 50; i++ {
+		db, err := mysql.Connect()
+		checkErr(err)
+		mysql.pool <- db
+	}
+}
+
+// 获取连接池
+func (mysql *Mysql) GetConn() (db *sql.DB) {
+	// fmt.Println("d.pool:")
+	// fmt.Println(d.pool)
+	if mysql.pool == nil {
+		mysql.New()
+	}
+	db = <-mysql.pool
+	return
+}
+
+// 返回连接池
+func (mysql *Mysql) RetConn(db *sql.DB) {
+	mysql.pool <- db
+	return
+}
+
+func (mysql *Mysql) Connect() (db *sql.DB, err error) {
 	// db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/dt?charset=utf8")
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s", mysql.user, mysql.pass, mysql.host, mysql.dbname, mysql.charset)
 	db, err = sql.Open("mysql", dsn)
@@ -51,6 +81,7 @@ func Connect(c Conf) (db *sql.DB, err error) {
 
 func checkErr(err error) {
 	if err != nil {
+		fmt.Println(err)
 		panic(err)
 	}
 }

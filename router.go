@@ -9,7 +9,7 @@ import (
 )
 
 // Assign 传递给页面参数
-var Assign = make(map[string]interface{})
+// var Assign = make(map[string]interface{})
 
 // RouterStruct 路由参数
 type RouterStruct struct {
@@ -21,8 +21,20 @@ type RouterStruct struct {
 	Rep http.ResponseWriter
 	// 参数
 	Params map[string]string
+	// Assign 传递给页面参数
+	Assign map[string]interface{}
 	// 路由对应关系
 	ConMap map[string]interface{}
+}
+
+// NewRouterStruct 初始化router
+func NewRouterStruct() (routerStruct *RouterStruct) {
+	routerStruct = &RouterStruct{
+		Params: make(map[string]string),
+		Assign: make(map[string]interface{}),
+		ConMap: make(map[string]interface{}),
+	}
+	return
 }
 
 // Router 路由方法
@@ -49,8 +61,9 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		// 处理参数
+		// 重置参数
 		routerStruct.Params = make(map[string]string)
+		// 处理参数
 		for k, v := range url.Query() {
 			if len(v) > 0 && v[0] != "" {
 				routerStruct.Params[k] = v[0]
@@ -95,9 +108,24 @@ func (routerStruct *RouterStruct) Display(page string) {
 		fmt.Println(err)
 	}
 	pageName := getFileName(page)
-	Assign["Con"] = strings.ToLower(routerStruct.Con)
-	Assign["Act"] = strings.ToLower(routerStruct.Act)
-	err = tem.ExecuteTemplate(routerStruct.Rep, pageName, Assign)
+	routerStruct.Assign["Con"] = strings.ToLower(routerStruct.Con)
+	routerStruct.Assign["Act"] = strings.ToLower(routerStruct.Act)
+	err = tem.ExecuteTemplate(routerStruct.Rep, pageName, routerStruct.Assign)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// 显示后台页面
+func (routerStruct *RouterStruct) DisplayAdmin(page string) {
+	tem, err := template.ParseFiles(page, "views/layouts/admin/left.html", "views/layouts/admin/header.html", "views/layouts/admin/footer.html")
+	if err != nil {
+		fmt.Println(err)
+	}
+	pageName := getFileName(page)
+	routerStruct.Assign["Con"] = strings.ToLower(routerStruct.Con)
+	routerStruct.Assign["Act"] = strings.ToLower(routerStruct.Act)
+	err = tem.ExecuteTemplate(routerStruct.Rep, pageName, routerStruct.Assign)
 	if err != nil {
 		fmt.Println(err)
 	}

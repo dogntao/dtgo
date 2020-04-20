@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"reflect"
 )
 
@@ -32,5 +34,14 @@ func StructArrToMapArr(s interface{}) (retMaps []map[string]interface{}) {
 			}
 		}
 	}
+	return
+
+}
+
+// Md5Fun
+func Md5Fun(str string) (md5str string) {
+	h := md5.New()
+	h.Write([]byte(str))
+	md5str = hex.EncodeToString(h.Sum(nil))
 	return
 }
