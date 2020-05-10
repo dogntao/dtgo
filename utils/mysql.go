@@ -47,7 +47,7 @@ func NewMysql(c Conf) (mysql *Mysql) {
 // 创建连接池
 func (mysql *Mysql) New() {
 	mysql.pool = make(chan *sql.DB, 50)
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 10; i++ {
 		db, err := mysql.Connect()
 		checkErr(err)
 		mysql.pool <- db

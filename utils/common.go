@@ -17,6 +17,37 @@ func StructToMap(s interface{}) (retMap map[string]interface{}) {
 	return
 }
 
+// 过滤slice重复值
+func ArrUniq(arrs []string) (res []string) {
+	if len(arrs) > 0 {
+		arrMaps := make(map[string]string)
+		for _, v := range arrs {
+			if v != "" {
+				if _, ok := arrMaps[v]; !ok {
+					arrMaps[v] = v
+					res = append(res, v)
+				}
+			}
+		}
+	}
+	return res
+}
+
+// arr 转换为 map
+func ArrToMap(s []map[string]string, field string) (retMap map[string]interface{}) {
+	if len(s) > 0 {
+		retMap = make(map[string]interface{})
+		for _, v := range s {
+			if vVal, vOk := v[field]; vOk {
+				if _, ok := retMap[vVal]; !ok {
+					retMap[vVal] = v
+				}
+			}
+		}
+	}
+	return
+}
+
 // struct arr 转换为 map arr
 func StructArrToMapArr(s interface{}) (retMaps []map[string]interface{}) {
 	sVal := reflect.ValueOf(s)
