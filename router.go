@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"text/template"
+
+	"github.com/dogntao/dtgo/utils"
 )
 
 // Assign 传递给页面参数
@@ -25,15 +27,22 @@ type RouterStruct struct {
 	Assign map[string]interface{}
 	// 路由对应关系
 	ConMap map[string]interface{}
+	// 后台登录
+	AdminConMap map[string]interface{}
+	// p     sync.Pool
 }
 
 // NewRouterStruct 初始化router
 func NewRouterStruct() (routerStruct *RouterStruct) {
 	routerStruct = &RouterStruct{
-		Params: make(map[string]string),
-		Assign: make(map[string]interface{}),
-		ConMap: make(map[string]interface{}),
+		Params:      make(map[string]string),
+		Assign:      make(map[string]interface{}),
+		ConMap:      make(map[string]interface{}),
+		AdminConMap: make(map[string]interface{}),
 	}
+	// routerStruct.p.New = func() interface{} {
+	// 	return &Context{}
+	// }
 	return
 }
 
@@ -72,12 +81,20 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		routerStruct.Req = r
 		routerStruct.Rep = w
 
+		// ctx := routerStruct.p.Get().(*Context)
+		// defer routerStruct.p.Put(ctx)
+		// ctx.Config(w, r)
+
 		// 通过反射调用方法
 		conv, exist := routerStruct.ConMap[routerStruct.Con]
 		if exist == true {
 			rv := reflect.ValueOf(conv)
 			method := rv.MethodByName(routerStruct.Act)
 			if method.IsValid() {
+				// 登录验证
+				if _, ok := routerStruct.AdminConMap[routerStruct.Con]; ok {
+					routerStruct.ALoginCheck()
+				}
 				method.Call([]reflect.Value{})
 			} else {
 				fmt.Println(routerStruct.Act + " method is not exist")
@@ -91,6 +108,13 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 // RegisterRouter 注册controller文件到路由
 func (routerStruct *RouterStruct) RegisterRouter(con string, inter interface{}) {
 	routerStruct.ConMap[con] = inter
+}
+
+// RegisterAlogin 注册登录controller
+func (routerStruct *RouterStruct) RegisterAlogin(cons []string) {
+	for _, v := range cons {
+		routerStruct.AdminConMap[v] = v
+	}
 }
 
 // 根据路径获取文件名(不带后缀)
@@ -128,5 +152,14 @@ func (routerStruct *RouterStruct) DisplayAdmin(page string) {
 	err = tem.ExecuteTemplate(routerStruct.Rep, pageName, routerStruct.Assign)
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+// 后台登录验证(未登录跳转到登录页)
+func (routerStruct *RouterStruct) ALoginCheck() {
+	// 获取cookie
+	_, err := utils.GetCookie(routerStruct.Req, "user_info")
+	if err != nil {
+		http.Redirect(routerStruct.Rep, routerStruct.Req, "/admin/index", http.StatusFound)
 	}
 }
