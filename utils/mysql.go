@@ -47,7 +47,7 @@ func NewMysql(c Conf) (mysql *Mysql) {
 // 创建连接池
 func (mysql *Mysql) New() {
 	mysql.pool = make(chan *sql.DB, 50)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 50; i++ {
 		db, err := mysql.Connect()
 		checkErr(err)
 		mysql.pool <- db
@@ -82,7 +82,7 @@ func (mysql *Mysql) Connect() (db *sql.DB, err error) {
 func checkErr(err error) {
 	if err != nil {
 		fmt.Println(err)
-		panic(err)
+		// panic(err)
 	}
 }
 
@@ -111,6 +111,9 @@ func (mysql *Mysql) Query(field interface{}, table, con string, bind []string) (
 		selSql = fmt.Sprintf("%s WHERE %s", selSql, con)
 	}
 	stmt, err := db.Prepare(selSql)
+	if err != nil {
+		return
+	}
 	// fmt.Println(selSql)
 	// fmt.Println(bind)
 	// 处理无绑定
