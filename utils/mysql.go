@@ -203,7 +203,7 @@ func (mysql *Mysql) Insert(tableName string, data map[string]interface{}) (lastI
 }
 
 // InsertMulti(批量插入数据)
-func (mysql *Mysql) InsertMulti(tableName string, data []map[string]string) (lastId int64, err error) {
+func (mysql *Mysql) InsertMulti(tableName string, data []map[string]interface{}) (lastId int64, err error) {
 	// INSERT INTO TABLE(keyArr) VALUES (?,?,...),(?,?,...),(?,?,...)
 	// 获取链接
 	db := mysql.GetConn()
@@ -238,6 +238,7 @@ func (mysql *Mysql) InsertMulti(tableName string, data []map[string]string) (las
 	keyStr := strings.Join(keyArr, ",")
 	valStr := strings.Join(valArr, ",")
 	sql := fmt.Sprintf("INSERT INTO %s(%s) VALUES %s", tableName, keyStr, valStr)
+	fmt.Println("InsertMulti", sql, bindArr)
 	result, err := db.Exec(sql, bindArr...)
 	if err == nil {
 		lastId, _ = result.LastInsertId()

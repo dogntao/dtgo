@@ -3,11 +3,20 @@ package dtgo
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
 
 	"github.com/dogntao/dtgo/utils"
+)
+
+var (
+	//生成的Html保存目录
+	htmlOutPath = "./"
+	//静态文件模版目录
+	templatePath = "./"
 )
 
 // Assign 传递给页面参数
@@ -138,6 +147,66 @@ func (routerStruct *RouterStruct) Display(page string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	// 2、打开文件
+	fileTmp, err := os.OpenFile(pageName+".html", os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		fmt.Println("打开文件失败")
+	}
+	defer fileTmp.Close()
+
+	// 3、生成静态文件
+	tem.ExecuteTemplate(fileTmp, pageName, routerStruct.Assign)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// 获取生成静态文件
+func (routerStruct *RouterStruct) GetGenerateHtml(page string) {
+	// 1、获取模板
+	fmt.Println("模板文件路径", page)
+	contenstTmp, err := template.ParseFiles(filepath.Join(templatePath, page))
+	// tem, err := template.ParseFiles(page, "views/layouts/index/about_left.html", "views/layouts/index/have_left.html", "views/layouts/index/no_left.html", "views/layouts/index/header.html", "views/layouts/index/footer.html")
+	if err != nil {
+		fmt.Println(err)
+
+	}
+
+	// 2、获取生成html路径
+	pageName := getFileName(page)
+	fileName := htmlOutPath + pageName + ".html"
+	fmt.Println("文件路径", fileName)
+
+	// 3、生成html文件
+	// fmt.Println("文件参数", routerStruct.Assign)
+	generateStaticHtml(contenstTmp, fileName, routerStruct.Assign)
+}
+
+// 生成静态html文件
+func generateStaticHtml(tem *template.Template, fileName string, data map[string]interface{}) {
+	// 1、判断文件是否存在(存在删除)
+	if existFile(fileName) {
+		err := os.Remove(fileName)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// 2、打开文件
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		fmt.Println("打开文件失败")
+	}
+	defer file.Close()
+
+	// 3、生成静态文件
+	tem.ExecuteTemplate(file, fileName, &data)
+}
+
+//判断文件是否存在
+func existFile(fileName string) bool {
+	_, err := os.Stat(fileName)
+	return err == nil || os.IsExist(err)
 }
 
 // 显示后台页面
