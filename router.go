@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
@@ -14,7 +13,7 @@ import (
 
 var (
 	//生成的Html保存目录
-	htmlOutPath = "./"
+	htmlOutPath = "./public/static/"
 	//静态文件模版目录
 	templatePath = "./"
 )
@@ -147,8 +146,30 @@ func (routerStruct *RouterStruct) Display(page string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	// 资讯生成静态文件
+	// fmt.Println("con act is", routerStruct.Assign["Con"], routerStruct.Assign["Act"])
+	if routerStruct.Assign["Con"] == "news" && routerStruct.Assign["Act"] == "info" {
+		routerStruct.GetGenerateHtml(tem, pageName)
+	}
+}
+
+// 获取生成静态文件
+func (routerStruct *RouterStruct) GetGenerateHtml(tem *template.Template, pageName string) {
+	fileName := pageName
+	if id, ok := routerStruct.Assign["Id"]; ok {
+		fileName = id.(string)
+	}
+	filePath := htmlOutPath + fileName + ".html"
+	fmt.Println("文件路径", filePath)
+	// 1、判断文件是否存在(存在删除)
+	if routerStruct.ExistFile(filePath) {
+		err := os.Remove(filePath)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 	// 2、打开文件
-	fileTmp, err := os.OpenFile(pageName+".html", os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	fileTmp, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		fmt.Println("打开文件失败")
 	}
@@ -161,50 +182,8 @@ func (routerStruct *RouterStruct) Display(page string) {
 	}
 }
 
-// 获取生成静态文件
-func (routerStruct *RouterStruct) GetGenerateHtml(page string) {
-	// 1、获取模板
-	fmt.Println("模板文件路径", page)
-	contenstTmp, err := template.ParseFiles(filepath.Join(templatePath, page))
-	// tem, err := template.ParseFiles(page, "views/layouts/index/about_left.html", "views/layouts/index/have_left.html", "views/layouts/index/no_left.html", "views/layouts/index/header.html", "views/layouts/index/footer.html")
-	if err != nil {
-		fmt.Println(err)
-
-	}
-
-	// 2、获取生成html路径
-	pageName := getFileName(page)
-	fileName := htmlOutPath + pageName + ".html"
-	fmt.Println("文件路径", fileName)
-
-	// 3、生成html文件
-	// fmt.Println("文件参数", routerStruct.Assign)
-	generateStaticHtml(contenstTmp, fileName, routerStruct.Assign)
-}
-
-// 生成静态html文件
-func generateStaticHtml(tem *template.Template, fileName string, data map[string]interface{}) {
-	// 1、判断文件是否存在(存在删除)
-	if existFile(fileName) {
-		err := os.Remove(fileName)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	// 2、打开文件
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		fmt.Println("打开文件失败")
-	}
-	defer file.Close()
-
-	// 3、生成静态文件
-	tem.ExecuteTemplate(file, fileName, &data)
-}
-
 //判断文件是否存在
-func existFile(fileName string) bool {
+func (routerStruct *RouterStruct) ExistFile(fileName string) bool {
 	_, err := os.Stat(fileName)
 	return err == nil || os.IsExist(err)
 }
