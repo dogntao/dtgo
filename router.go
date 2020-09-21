@@ -58,7 +58,12 @@ func NewRouterStruct() (routerStruct *RouterStruct) {
 func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request) {
 	url := r.URL
 	path := url.Path
-	if path != "/favicon.ico" {
+	fmt.Println("path:", path)
+	if strings.Contains(path, "html") {
+		t := template.New(path)
+		t.Execute(w, nil)
+	}
+	if path != "/favicon.ico" && !strings.Contains(path, "html") {
 		// 处理controllre和action
 		pathArr := strings.Split(path, "/")
 		// 处理controller和action
@@ -93,6 +98,12 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		// defer routerStruct.p.Put(ctx)
 		// ctx.Config(w, r)
 
+		// 优先跳转静态方法
+		filePath := routerStruct.getHtmlPath()
+		if routerStruct.ExistFile(filePath) {
+			http.Redirect(routerStruct.Rep, routerStruct.Req, filePath, http.StatusTemporaryRedirect)
+			return
+		}
 		// 通过反射调用方法
 		conv, exist := routerStruct.ConMap[routerStruct.Con]
 		if exist == true {
@@ -148,19 +159,34 @@ func (routerStruct *RouterStruct) Display(page string) {
 	}
 	// 资讯生成静态文件
 	// fmt.Println("con act is", routerStruct.Assign["Con"], routerStruct.Assign["Act"])
-	if routerStruct.Assign["Con"] == "news" && routerStruct.Assign["Act"] == "info" {
-		routerStruct.GetGenerateHtml(tem, pageName)
+	// if routerStruct.Assign["Con"] == "news" && routerStruct.Assign["Act"] == "info" {
+	routerStruct.GetGenerateHtml(tem, pageName)
+	// }
+}
+
+// getHtmlPath 根据url及参数获取静态文件路径
+func (routerStruct *RouterStruct) getHtmlPath() (filePath string) {
+	con := strings.ToLower(routerStruct.Con)
+	act := strings.ToLower(routerStruct.Act)
+	fileUrl := templatePath
+	// 首页
+	if act == "index" {
+		fileUrl += con
 	}
+	if id, ok := routerStruct.Assign["Id"]; ok {
+		fileUrl += "/" + id.(string)
+	}
+	filePath = fileUrl + ".html"
+	fmt.Println("con act filePath is", con, act, filePath)
+	return
 }
 
 // 获取生成静态文件
 func (routerStruct *RouterStruct) GetGenerateHtml(tem *template.Template, pageName string) {
-	fileName := pageName
-	if id, ok := routerStruct.Assign["Id"]; ok {
-		fileName = id.(string)
-	}
-	filePath := htmlOutPath + fileName + ".html"
+	// fileName := pageName
+	filePath := routerStruct.getHtmlPath()
 	fmt.Println("文件路径", filePath)
+	return
 	// 1、判断文件是否存在(存在删除)
 	if routerStruct.ExistFile(filePath) {
 		err := os.Remove(filePath)
