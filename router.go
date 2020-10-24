@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"reflect"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/dogntao/dtgo/utils"
@@ -38,6 +40,7 @@ type RouterStruct struct {
 	// 后台登录
 	AdminConMap map[string]interface{}
 	// p     sync.Pool
+	Lock sync.Mutex
 }
 
 // NewRouterStruct 初始化router
@@ -57,15 +60,19 @@ func NewRouterStruct() (routerStruct *RouterStruct) {
 // Router 路由方法
 func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request) {
 	url := r.URL
-	path := url.Path
-	fmt.Println("path:", path)
-	if strings.Contains(path, "html") {
-		t := template.New(path)
-		t.Execute(w, nil)
-	}
-	if path != "/favicon.ico" && !strings.Contains(path, "html") {
+	urlPath := url.Path
+	// 获取路由后缀
+	fileExt := getFileExt(urlPath)
+	fmt.Println("url,路由后缀:", url, fileExt)
+
+	if fileExt == ".html" { // html直接走静态页
+		htmlPath := templatePath + urlPath
+		temp := template.Must(template.ParseFiles(htmlPath))
+		temp.Execute(w, r)
+		return
+	} else if fileExt == "" { // 非静态文件走静态路由
 		// 处理controllre和action
-		pathArr := strings.Split(path, "/")
+		pathArr := strings.Split(urlPath, "/")
 		// 处理controller和action
 		// controller默认为index
 		routerStruct.Con = strings.Title("index")
@@ -100,7 +107,10 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 
 		// 优先跳转静态方法
 		filePath := routerStruct.getHtmlPath()
+		fmt.Println("静态文件路径:", filePath)
 		if routerStruct.ExistFile(filePath) {
+			filePath = strings.Replace(filePath, ".", "", 1)
+			fmt.Println("新静态文件路径:", filePath)
 			http.Redirect(routerStruct.Rep, routerStruct.Req, filePath, http.StatusTemporaryRedirect)
 			return
 		}
@@ -169,15 +179,27 @@ func (routerStruct *RouterStruct) getHtmlPath() (filePath string) {
 	con := strings.ToLower(routerStruct.Con)
 	act := strings.ToLower(routerStruct.Act)
 	fileUrl := templatePath
-	// 首页
+	// 首页(works/index->works.html)
 	if act == "index" {
 		fileUrl += con
+	} else {
+		// 二级页面(works/basic->works/basic.html)
+		fileUrl += con
+		// 创建文件夹
+		routerStruct.CreateFolder(fileUrl)
+		fileUrl += "/" + act
 	}
-	if id, ok := routerStruct.Assign["Id"]; ok {
-		fileUrl += "/" + id.(string)
+	// 并发map读
+	routerStruct.Lock.Lock()
+	if id, ok := routerStruct.Params["id"]; ok {
+		// 创建文件夹
+		routerStruct.CreateFolder(fileUrl)
+		fileUrl += "/" + id
 	}
+	routerStruct.Lock.Unlock()
 	filePath = fileUrl + ".html"
-	fmt.Println("con act filePath is", con, act, filePath)
+	// 输出文件路径
+	fmt.Println("routerStruct,con act filePath is", routerStruct, con, act, filePath)
 	return
 }
 
@@ -185,8 +207,7 @@ func (routerStruct *RouterStruct) getHtmlPath() (filePath string) {
 func (routerStruct *RouterStruct) GetGenerateHtml(tem *template.Template, pageName string) {
 	// fileName := pageName
 	filePath := routerStruct.getHtmlPath()
-	fmt.Println("文件路径", filePath)
-	return
+	// return
 	// 1、判断文件是否存在(存在删除)
 	if routerStruct.ExistFile(filePath) {
 		err := os.Remove(filePath)
@@ -212,6 +233,24 @@ func (routerStruct *RouterStruct) GetGenerateHtml(tem *template.Template, pageNa
 func (routerStruct *RouterStruct) ExistFile(fileName string) bool {
 	_, err := os.Stat(fileName)
 	return err == nil || os.IsExist(err)
+}
+
+//创建文件夹，存在不创建
+func (routerStruct *RouterStruct) CreateFolder(folderPath string) (err error) {
+	if _, err = os.Stat(folderPath); os.IsNotExist(err) {
+		// 必须分成两步
+		// 先创建文件夹
+		os.Mkdir(folderPath, 0777)
+		// 再修改权限
+		os.Chmod(folderPath, 0777)
+	}
+	return
+}
+
+// 获取文件后缀
+func getFileExt(urlPath string) (ext string) {
+	ext = strings.ToLower(path.Ext(urlPath))
+	return
 }
 
 // 显示后台页面
