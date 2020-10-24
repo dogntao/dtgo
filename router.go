@@ -105,14 +105,16 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		// defer routerStruct.p.Put(ctx)
 		// ctx.Config(w, r)
 
-		// 优先跳转静态方法
+		// 优先跳转静态方法(排除强制生成静态页，通过ref参数)
 		filePath := routerStruct.getHtmlPath()
 		fmt.Println("静态文件路径:", filePath)
-		if routerStruct.ExistFile(filePath) {
-			filePath = strings.Replace(filePath, ".", "", 1)
-			fmt.Println("新静态文件路径:", filePath)
-			http.Redirect(routerStruct.Rep, routerStruct.Req, filePath, http.StatusTemporaryRedirect)
-			return
+		if _, ok := routerStruct.Params["ref"]; !ok {
+			if routerStruct.ExistFile(filePath) {
+				filePath = strings.Replace(filePath, ".", "", 1)
+				fmt.Println("新静态文件路径:", filePath)
+				http.Redirect(routerStruct.Rep, routerStruct.Req, filePath, http.StatusTemporaryRedirect)
+				return
+			}
 		}
 		// 通过反射调用方法
 		conv, exist := routerStruct.ConMap[routerStruct.Con]
