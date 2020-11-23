@@ -174,7 +174,10 @@ func (routerStruct *RouterStruct) Display(page string) {
 	// 资讯生成静态文件
 	// fmt.Println("con act is", routerStruct.Assign["Con"], routerStruct.Assign["Act"])
 	// if routerStruct.Assign["Con"] == "news" && routerStruct.Assign["Act"] == "info" {
-	routerStruct.GetGenerateHtml(tem, pageName)
+	// 搜索不生成静态页
+	if _, ok := routerStruct.Params["search"]; !ok {
+		routerStruct.GetGenerateHtml(tem, pageName)
+	}
 	// }
 }
 
