@@ -109,11 +109,13 @@ func (routerStruct *RouterStruct) Router(w http.ResponseWriter, r *http.Request)
 		filePath := routerStruct.getHtmlPath()
 		fmt.Println("静态文件路径:", filePath)
 		if _, ok := routerStruct.Params["ref"]; !ok {
-			if routerStruct.ExistFile(filePath) {
-				filePath = strings.Replace(filePath, ".", "", 1)
-				fmt.Println("新静态文件路径:", filePath)
-				http.Redirect(routerStruct.Rep, routerStruct.Req, filePath, http.StatusTemporaryRedirect)
-				return
+			if _, ok := routerStruct.Params["search"]; !ok {
+				if routerStruct.ExistFile(filePath) {
+					filePath = strings.Replace(filePath, ".", "", 1)
+					fmt.Println("新静态文件路径:", filePath)
+					http.Redirect(routerStruct.Rep, routerStruct.Req, filePath, http.StatusTemporaryRedirect)
+					return
+				}
 			}
 		}
 		// 通过反射调用方法
