@@ -244,24 +244,24 @@ func (routerStruct *RouterStruct) ExistFile(fileName string) bool {
 
 //创建文件夹，存在不创建
 func (routerStruct *RouterStruct) CreateFolder(folderPath string) (err error) {
-	folderPaths := strings.Split(folderPath, "/")
-	if len(folderPaths) > 1 {
-		folderCon := strings.Title(folderPaths[1])
-		// fmt.Println("folder con:", folderCon)
-		// fmt.Println("router map:", routerStruct.ConMap)
-		if _, ok := routerStruct.ConMap[folderCon]; ok {
-			// 后台页面不生成文件夹
-			if _, ok := routerStruct.AdminConMap[folderCon]; !ok {
-				if _, err = os.Stat(folderPath); os.IsNotExist(err) {
-					// 必须分成两步
-					// 先创建文件夹
-					os.Mkdir(folderPath, 0777)
-					// 再修改权限
-					os.Chmod(folderPath, 0777)
-				}
-			}
-		}
+	// folderPaths := strings.Split(folderPath, "/")
+	// if len(folderPaths) > 1 {
+	// 	folderCon := strings.Title(folderPaths[1])
+	// 	// fmt.Println("folder con:", folderCon)
+	// 	// fmt.Println("router map:", routerStruct.ConMap)
+	// 	if _, ok := routerStruct.ConMap[folderCon]; ok {
+	// 		// 后台页面不生成文件夹
+	// 		if _, ok := routerStruct.AdminConMap[folderCon]; !ok {
+	if _, err = os.Stat(folderPath); os.IsNotExist(err) {
+		// 必须分成两步
+		// 先创建文件夹
+		os.Mkdir(folderPath, 0777)
+		// 再修改权限
+		os.Chmod(folderPath, 0777)
 	}
+	// 		}
+	// 	}
+	// }
 	return
 }
 
